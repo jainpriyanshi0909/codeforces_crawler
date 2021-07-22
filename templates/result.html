@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
+    crossorigin="anonymous"
+    ></script>
+    <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x"
+    crossorigin="anonymous"
+/>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://github.com/nagix/chartjs-plugin-colorschemes/releases/download/v0.4.0/chartjs-plugin-colorschemes.min.js"></script>
+<script
+    rel="javascript"
+    type="text/javascript"
+    href="js/jquery-1.11.3.min.js"
+></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+
+  
+<title>CRAWLER</title>
+</head>
+<body>
+   <div class= "jumbotron jumbotron-fluid mt-4 mb-3">
+    
+    <h1  class="display-4 mb-2">Hi {{name}}</h1>
+    <input type="hidden" id="handle" name="variable" value="{{name}}">
+   <ul class="list-group list-group-flush">
+        <li class="list-group-item">Current Title : <span id="current_title"></span></li> 
+        <li class="list-group-item">Current rating :<span id="cur_rating"></span></li>
+        <li class="list-group-item">Best Title : <span id="best_tite"></span></li>
+        <li class="list-group-item">Best Rating :<span id="best_rating"></span></li> 
+    </ul>
+</div>
+
+
+<div class="container col-sm-4 mt-4">
+    <canvas id="langChart" width="500" height="500"></canvas>
+</div>
+<div class="container col-sm-4 mt-4">
+    <canvas id="subChart" width="500" height="500"></canvas>
+</div>
+<div class="container col-sm-9 mt-4">
+    <canvas id="ratingsChart" width="800" height="500"></canvas> 
+</div> 
+<script>
+const handle = document.getElementById("handle")
+const curtitle =  document.getElementById("current_title");
+const maxtitle =  document.getElementById("best_tite");
+const currating =  document.getElementById("cur_rating");
+const maxrating =  document.getElementById("best_rating");
+
+
+   
+   
+
+  url =  'https://codeforces.com/api/user.info?handles=' + handle.value ;
+  
+
+const dict = async () =>{
+    try{
+    const request = await axios.get(url);
+    const resq = request.data.result[0];
+    console.log(resq);
+           curtitle.innerText =  resq.rank ;
+           maxtitle.innerText = resq.maxRank;
+           maxrating.innerText = resq.maxRating;
+           currating.innerText = resq.rating;
+    }
+    catch (e){
+        curtitle.innerText = "ert"
+        console.log("error",e);
+    }
+
+}
+  dict();
+  url2 = 'https://codeforces.com/api/user.rating?handle=' +handle.value;
+  const dict1 = async () =>{
+    try{
+    const request1 = await axios.get(url2);
+    const resq1 = request1.data;
+    console.log(resq1);
+    var contest_list = [];
+    var rating_list = [];
+     for(var i =0 ;i< resq1.result.length;i++){
+        contest_list[i] = resq1.result[i].contestName ;
+        rating_list[i] = resq1.result[i].newRating;
+     }
+     console.log(rating_list);
+
+
+     var ctx = document.getElementById('ratingsChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                     labels : contest_list,
+                    datasets: [{
+                        label: 'Submissions',
+                        data: rating_list,
+                        backgroundColor: [
+                            // 'rgba(155, 255, 32, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)'
+                        ],
+                        borderColor: [
+                            // 'rgba(55, 200, 0, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            // 'rgba(255, 206, 86, 1)',
+                            // 'rgba(75, 192, 192, 1)',
+                            // 'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                            }
+        	            }]
+                    }
+                }
+            })
+
+
+    }
+    catch (e){
+        curtitle.innerText = "ert"
+        console.log("error",e);
+    }
+  
+}
+url3 = 'https://codeforces.com/api/user.status?handle='+ handle.value ;
+dict1();
+const dict2 = async () =>{
+    try{
+    const request2 = await axios.get(url3);
+    const resq3 = request2.data;
+    console.log(resq3);
+    let lang_map = {}
+    for(var j =0;j<resq3.result.length;j++){
+      var lang = resq3.result[j].programmingLanguage ;
+      var verd = resq3.result[j].verdict;
+      if(lang_map[lang] >=0) {
+          var o = lang_map[lang];
+      lang_map[lang] = o+1;
+      }
+      else{
+        lang_map[lang] = 1; 
+      }
+    }
+    let key = Object.keys(lang_map);
+     let vals = Object.values(lang_map);
+     var ctx = document.getElementById('langChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    // labels: ['Contest #1', 'Contest #2', 'Contest #3', 'Contest #4', 'Contest #5', 'Contest #6'],
+                    labels : key,
+                    datasets: [{
+                        label: 'Language',
+                        data: vals,
+                        backgroundColor: [
+                            'rgba(155, 255, 32, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(55, 200, 0, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: {
+                        colorschemes: {
+                            scheme: 'brewer.Paired12'
+                        }
+                    }
+                }
+            });
+         console.log("Languages Chart completed")
+   let verdict_map = {}  
+   for(var k =0;k<resq3.result.length;k++){
+            var verd = resq3.result[k].verdict;
+        if(verdict_map[verd] >=0) {
+          var o = verdict_map[verd];
+        verdict_map[verd] = o+1;
+        }
+         else{
+        verdict_map[verd] = 1; 
+        }
+    }
+     var verkey = Object.keys(verdict_map);
+     var vervalues = Object.values(verdict_map);
+     console.log(verkey);
+     var ctx = document.getElementById('subChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    // labels: ['Contest #1', 'Contest #2', 'Contest #3', 'Contest #4', 'Contest #5', 'Contest #6'],
+                    labels : verkey,
+                    datasets: [{
+                        label: 'Ratings',
+                        data: vervalues,
+                        backgroundColor: [
+                            'rgba(155, 255, 32, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)'
+                            
+                        ],
+                        borderColor: [
+                            'rgba(55, 200, 0, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)'
+                            
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            console.log("Submissions Chart completed")
+        
+           
+    }
+    catch (e){
+        curtitle.innerText = "ert"
+        console.log("error",e);
+    }
+
+}
+  dict2();
+
+</script>
+</body>
+</html>
